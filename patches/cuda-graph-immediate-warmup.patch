@@ -1,0 +1,42 @@
+--- a/ggml/src/ggml-cuda/ggml-cuda.cu
++++ b/ggml/src/ggml-cuda/ggml-cuda.cu
+@@ -4548,23 +4548,28 @@ static enum ggml_status ggml_backend_cuda_graph_compute(ggml_backend_t backend,
+     if (graph->is_enabled()) {
+         const bool graph_compatible = ggml_cuda_graph_check_compability(cgraph);
+         if (graph_compatible) {
+             const bool properties_changed = ggml_cuda_graph_update_required(cuda_ctx, cgraph);
+ 
+             if (!graph->warmup_complete) {
+-                // Warmup: need at least 2 calls with no property change on the 2nd call
+-                if (!properties_changed) {
+-                    graph->warmup_complete = true;
+-                    GGML_LOG_DEBUG("%s: CUDA graph warmup complete\n", __func__);
+-                    use_cuda_graph = true;
+-                    cuda_graph_update_required = true;
+-                    graph_direct = false;
+-                    graph_capture = true;
+-                    graph_launch = true;
+-                }
+-                // else: properties changed or first call - execute directly (use_cuda_graph stays false)
++                // Upstream waits for a *second* call that reports no property
++                // change before capturing. That costs one full direct
++                // evaluation for every distinct graph shape, and a long decode
++                // meets dozens of shapes -- so the first tokens come in slow
++                // and only "warm up" as the common shapes are exhausted.
++                // Capture on first sight instead: if the shape really is
++                // unstable the post-warmup branch below drops back to direct.
++                // Worst case (a shape seen exactly once) costs one capture
++                // instead of one direct eval; anything reusable only wins.
++                graph->warmup_complete = true;
++                GGML_LOG_DEBUG("%s: CUDA graph warmup complete\n", __func__);
++                use_cuda_graph = true;
++                cuda_graph_update_required = true;
++                graph_direct = false;
++                graph_capture = true;
++                graph_launch = true;
+             } else {
+                 // Post-warmup: normal CUDA graph operation
+                 if (properties_changed) {
+                     // Properties changed - reset warmup, execute directly until stable again
+                     graph_reset = true;
+                     graph->warmup_complete = false;

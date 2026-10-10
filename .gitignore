@@ -1,0 +1,36 @@
+/build/
+/build-rocm/
+/build-cpu/
+/build-cuda/
+/build-cuda13.4-dll/
+/build-layer/
+/models/
+/.venv/
+/logs/
+compile_commands.json
+*.gguf
+.cache/
+__pycache__/
+*.pyc
+
+/build-ui*/
+
+/build-win*/
+/build-session*/
+
+# Local one-click launchers pinned to this machine's paths
+/start-local.*
+*.obj
+*.exe
+*.ilk
+*.pdb
+
+CLAUDE.md
+/build-hip*/
+/dist/
+/artifacts/
+
+# local transfer / build-log artefacts
+*.bundle
+ctest-out*.log
+ninja-build*.log
